@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>200-Mile Tracker</title>
+<style>
+  :root {
+    --ink:#1f2a24; --moss:#3d5a45; --moss-light:#6b8770;
+    --stone:#f4f2ec; --stone-line:#ddd8cc; --clay:#a8562f; --paper:#fdfcf9;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink); background:var(--paper); line-height:1.4;
+    max-width:520px; margin:0 auto; padding:16px 14px 40px;
+  }
+  h1 { font-size:22px; color:var(--moss); letter-spacing:-.01em; }
+  .eyebrow { font-size:10px; text-transform:uppercase; letter-spacing:.16em; color:var(--clay); font-weight:700; margin-bottom:4px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--moss); margin:26px 0 10px; padding-bottom:5px; border-bottom:1px solid var(--stone-line); }
+  .goal-num { display:flex; align-items:baseline; gap:8px; margin:10px 0 6px; }
+  .goal-num .big { font-size:40px; font-weight:800; color:var(--clay); font-variant-numeric:tabular-nums; }
+  .goal-num .of { font-size:15px; color:var(--moss-light); }
+  .bar { height:14px; background:var(--stone); border-radius:8px; overflow:hidden; }
+  .bar-fill { height:100%; background:linear-gradient(90deg,var(--moss),var(--moss-light)); width:0%; transition:width .4s ease; }
+  .pace { font-size:12.5px; color:var(--moss-light); margin-top:6px; }
+  .pace strong { color:var(--ink); }
+  .log-row { display:flex; gap:8px; margin-top:12px; }
+  .log-row input {
+    flex:1; font-size:16px; padding:11px 12px; border:1px solid var(--stone-line);
+    border-radius:9px; background:#fff; color:var(--ink); min-width:0;
+  }
+  .log-row button {
+    background:var(--clay); color:#fff; border:none; border-radius:9px;
+    padding:0 18px; font-size:15px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .log-row button:active { opacity:.8; }
+  .hikes { margin-top:10px; }
+  .hike-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 2px; border-bottom:1px dotted var(--stone-line); font-size:14px;
+  }
+  .hike-item .mi { color:var(--clay); font-weight:600; }
+  .hike-item .del { color:var(--moss-light); font-size:18px; cursor:pointer; padding:0 6px; }
+  .week-head { display:flex; justify-content:space-between; align-items:center; }
+  .week-head .wk { font-size:12px; color:var(--moss-light); }
+  .day-card { background:var(--stone); border-left:3px solid var(--moss); border-radius:6px; margin-bottom:10px; overflow:hidden; }
+  .day-card.lower { border-left-color:var(--clay); }
+  .day-top { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; cursor:pointer; }
+  .day-top .d-name { font-weight:700; font-size:14px; }
+  .day-top .d-tag { font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--moss-light); }
+  .day-card.lower .d-tag { color:var(--clay); }
+  .check {
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--stone-line);
+    background:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:15px; color:#fff; flex-shrink:0;
+  }
+  .check.done { background:var(--moss); border-color:var(--moss); }
+  .day-card.lower .check.done { background:var(--clay); border-color:var(--clay); }
+  .check.auto { background:var(--clay); border-color:var(--clay); }
+  .ex { padding:0 14px; max-height:0; overflow:hidden; transition:max-height .25s ease,padding .25s ease; }
+  .ex.open { max-height:400px; padding:0 14px 12px; }
+  .ex li { list-style:none; display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px dotted var(--stone-line); }
+  .ex li:last-child { border-bottom:none; }
+  .ex li .sets { color:var(--moss-light); white-space:nowrap; }
+  .rest { text-align:center; color:var(--moss-light); font-size:13px; font-style:italic; padding:12px; }
+  .week-sub { font-size:11.5px; color:var(--moss-light); margin-top:2px; }
+  .notes-area { width:100%; font-size:15px; padding:11px 12px; border:1px solid var(--stone-line); border-radius:9px; background:#fff; color:var(--ink); font-family:inherit; line-height:1.45; resize:vertical; min-height:90px; }
+  .notes-save { margin-top:8px; display:flex; align-items:center; gap:10px; }
+  .notes-save button { background:var(--moss); color:#fff; border:none; border-radius:9px; padding:9px 18px; font-size:14px; font-weight:600; cursor:pointer; }
+  .notes-save button:active { opacity:.8; }
+  .notes-saved { font-size:12px; color:var(--moss-light); font-style:italic; }
+  .reset { margin-top:28px; text-align:center; }
+  .reset button { background:none; border:none; color:var(--moss-light); font-size:11px; text-decoration:underline; cursor:pointer; }
+  .loading { text-align:center; color:var(--moss-light); padding:40px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="eyebrow">200-Mile Year · Sept 2026 – Aug 2027</div>
+<h1>Training Tracker</h1>
+<div id="app"><div class="loading">Loading your progress…</div></div>
+<div class="reset"><button id="resetBtn">Reset all data</button></div>
+
+<script>
+const GOAL = 200;
+const PLAN_START = new Date(2026,8,7); // Mon Sep 7 2026 — week 1 anchor
+const MONTHLY = [
+  {m:"Sep",target:8},{m:"Oct",target:18},{m:"Nov",target:30},{m:"Dec",target:40},
+  {m:"Jan",target:52},{m:"Feb",target:66},{m:"Mar",target:84},{m:"Apr",target:106},
+  {m:"May",target:132},{m:"Jun",target:158},{m:"Jul",target:182},{m:"Aug",target:200}
+];
+const DAYS = [
+  {name:"Monday",tag:"Lower A — Hips & Glutes",lower:true,ex:[
+    ["Back squats","3 × 8"],["Walking lunges","3 × 10/leg"],["Glute bridges","3 × 12"],
+    ["Lateral band walks","3 × 12/side"],["Calf raises","3 × 15"],["Dead bugs","3 × 8/side"],["Side planks","3 × 20–30s"]]},
+  {name:"Tuesday",tag:"Upper Push",lower:false,ex:[
+    ["Bench / OH press","3 × 8"],["Dips / incline","3 × 10"],["Triceps","3 × 12"],["Pallof press","3 × 10/side"]]},
+  {name:"Wednesday",tag:"Upper Pull",lower:false,ex:[
+    ["Rows","3 × 8"],["Pull-downs","3 × 10"],["Biceps + rear delts","3 × 12"],["Bird dogs","3 × 8/side"]]},
+  {name:"Thursday",tag:"Lower B — Hamstrings",lower:true,ex:[
+    ["Split squats","3 × 8/leg"],["Loaded step-ups","3 × 10/leg"],["RDLs","3 × 8"],
+    ["Nordic negatives","2 × 5"],["Calf raises","3 × 15"],["Bird dogs","3 × 8/side"],["Side planks","3 × 20–30s"]]},
+  {name:"Friday",tag:"Hike / Training Walk",lower:false,hike:true,ex:[]}
+];
+
+let state = { hikes:[], weeks:{}, notes:"" };
+
+// ---- calendar week helpers ----
+function startOfWeek(d){ // Monday as start
+  const x = new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const day = (x.getDay()+6)%7; // Mon=0
+  x.setDate(x.getDate()-day);
+  return x;
+}
+function weekKey(d){ const s=startOfWeek(d); return s.getFullYear()+'-'+(s.getMonth()+1)+'-'+s.getDate(); }
+function currentWeekNumber(){
+  const s0 = startOfWeek(PLAN_START);
+  const sNow = startOfWeek(new Date());
+  const diff = Math.round((sNow-s0)/(7*24*3600*1000));
+  return Math.max(0,diff)+1;
+}
+function weekRangeLabel(){
+  const s = startOfWeek(new Date());
+  const e = new Date(s); e.setDate(e.getDate()+6);
+  const f=(x)=>x.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return f(s)+' – '+f(e);
+}
+function hikeThisWeek(){
+  const wk = weekKey(new Date());
+  return state.hikes.some(h=>h.wk===wk);
+}
+
+async function load(){
+  try{ const r = await window.storage.get('trainingStateV2'); if(r&&r.value) state=JSON.parse(r.value); }catch(e){}
+  if(!state.hikes) state.hikes=[];
+  if(!state.weeks) state.weeks={};
+  if(state.notes==null) state.notes="";
+  render();
+}
+async function save(){ try{ await window.storage.set('trainingStateV2', JSON.stringify(state)); }catch(e){ console.error(e); } }
+
+function totalMiles(){ return state.hikes.reduce((s,h)=>s+h.mi,0); }
+function paceInfo(){
+  const now=new Date(); let mi=(now.getFullYear()-2026)*12+(now.getMonth()-8);
+  if(mi<0)mi=0; if(mi>11)mi=11;
+  const target=MONTHLY[mi].target, done=totalMiles();
+  return {monthLabel:MONTHLY[mi].m,target,done,diff:done-target};
+}
+
+function render(){
+  const done=totalMiles(), pct=Math.min(100,(done/GOAL)*100), p=paceInfo();
+  let paceMsg = p.diff>=0
+    ? `<strong>${done.toFixed(1)} mi</strong> logged — you're <strong>${p.diff.toFixed(1)} ahead</strong> of the ${p.monthLabel} target (${p.target}).`
+    : `<strong>${done.toFixed(1)} mi</strong> logged — <strong>${Math.abs(p.diff).toFixed(1)} behind</strong> the ${p.monthLabel} target (${p.target}). One good hike closes it.`;
+
+  const wkNum = currentWeekNumber();
+  const wkey = weekKey(new Date());
+  const wk = state.weeks[wkey] || {};
+  const hikeDone = hikeThisWeek();
+  const doneCount = DAYS.filter((d,i)=> d.hike ? hikeDone : wk[i]).length;
+
+  let daysHtml = DAYS.map((d,i)=>{
+    if(d.hike){
+      const cls = hikeDone ? 'auto' : '';
+      const mark = hikeDone ? '✓' : '';
+      const inner = hikeDone
+        ? `<div class="rest">Hike logged this week — nice work.</div>`
+        : `<div class="rest">Log your miles above and this checks itself.</div>`;
+      return `<div class="day-card">
+        <div class="day-top" data-toggle="${i}">
+          <div><div class="d-name">${d.name}</div><div class="d-tag">${d.tag}</div></div>
+          <div class="check ${cls}">${mark}</div>
+        </div>
+        <div class="ex" id="ex${i}">${inner}</div>
+      </div>`;
+    }
+    const lis=d.ex.map(e=>`<li><span>${e[0]}</span><span class="sets">${e[1]}</span></li>`).join('');
+    return `<div class="day-card ${d.lower?'lower':''}">
+      <div class="day-top" data-toggle="${i}">
+        <div><div class="d-name">${d.name}</div><div class="d-tag">${d.tag}</div></div>
+        <div class="check ${wk[i]?'done':''}" data-check="${i}">${wk[i]?'✓':''}</div>
+      </div>
+      <ul class="ex" id="ex${i}">${lis}</ul>
+    </div>`;
+  }).join('');
+
+  let hikesHtml = state.hikes.length ? state.hikes.map((h,idx)=>
+    `<div class="hike-item"><span>${h.date}</span><span><span class="mi">${h.mi} mi</span> <span class="del" data-del="${idx}">×</span></span></div>`
+  ).join('') : `<div class="rest">No hikes logged yet.</div>`;
+
+  document.getElementById('app').innerHTML = `
+    <div class="goal-num"><span class="big">${done.toFixed(0)}</span><span class="of">of ${GOAL} miles</span></div>
+    <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+    <div class="pace">${paceMsg}</div>
+
+    <h2>Log a Hike</h2>
+    <div class="log-row">
+      <input type="number" id="miInput" placeholder="Miles (e.g. 4.5)" inputmode="decimal" step="0.1">
+      <button id="addHike">Add</button>
+    </div>
+    <div class="hikes">${hikesHtml}</div>
+
+    <h2>This Week's Workouts</h2>
+    <div class="week-head">
+      <span class="wk">Week ${wkNum}</span>
+      <span class="wk">${doneCount}/5 done</span>
+    </div>
+    <div class="week-sub">${weekRangeLabel()} · resets automatically each Monday</div>
+    <div style="margin-top:10px">${daysHtml}</div>
+
+    <h2>Notes</h2>
+    <textarea class="notes-area" id="notesArea" placeholder="How did the week feel? Aches, wins, trail ideas, what to adjust…">${state.notes.replace(/</g,'&lt;')}</textarea>
+    <div class="notes-save">
+      <button id="saveNotes">Save notes</button>
+      <span class="notes-saved" id="notesStatus"></span>
+    </div>
+  `;
+
+  document.getElementById('addHike').onclick=addHike;
+  document.getElementById('miInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addHike(); });
+  document.getElementById('saveNotes').onclick=saveNotes;
+  document.querySelectorAll('[data-check]').forEach(el=>el.onclick=(e)=>{ e.stopPropagation(); toggleDay(+el.dataset.check); });
+  document.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=()=>{ document.getElementById('ex'+el.dataset.toggle).classList.toggle('open'); });
+  document.querySelectorAll('[data-del]').forEach(el=>el.onclick=()=>delHike(+el.dataset.del));
+}
+
+function addHike(){
+  const inp=document.getElementById('miInput'); const mi=parseFloat(inp.value);
+  if(!mi||mi<=0) return;
+  const d=new Date();
+  state.hikes.unshift({date:d.toLocaleDateString('en-US',{month:'short',day:'numeric'}), mi:Math.round(mi*10)/10, wk:weekKey(d)});
+  save(); render();
+}
+function delHike(idx){ state.hikes.splice(idx,1); save(); render(); }
+function saveNotes(){
+  const t=document.getElementById('notesArea').value;
+  state.notes=t; save();
+  const s=document.getElementById('notesStatus');
+  const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  s.textContent='Saved '+now;
+}
+function toggleDay(i){
+  const wkey=weekKey(new Date());
+  if(!state.weeks[wkey]) state.weeks[wkey]={};
+  state.weeks[wkey][i]=!state.weeks[wkey][i];
+  save(); render();
+}
+document.getElementById('resetBtn').onclick=async()=>{
+  if(confirm('Reset all miles and workout check-offs? This cannot be undone.')){
+    state={hikes:[],weeks:{},notes:""}; await save(); render();
+  }
+};
+load();
+</script>
+</body>
+</html>
